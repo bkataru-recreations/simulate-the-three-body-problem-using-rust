@@ -1,3 +1,5 @@
+use plotters::prelude::*;
+
 #[derive(Debug, Clone, Copy)]
 struct Body {
     mass: f64,
@@ -21,20 +23,66 @@ struct Step {
     bodies: [Body; 3],
 }
 
-const TIME_STEP: f64 = 0.5;
-const STEPS: usize = 100_000;
+const TIME_STEP: f64 = 50.0;
+const STEPS: usize = 10000;
 const G: f64 = 6.67430e-11; // gravitational constant
-   
+// const ANIMATION_LENGTH: u32 = 60;
+const ANIMATION_FPS: u32 = 60;
+
+fn animate_steps(steps: &[Step]) {
+    println!("Generating animation...");
+    let area = BitMapBackend::gif("three_body.gif", (250, 250), 1000 / ANIMATION_FPS)
+        .unwrap()
+        .into_drawing_area();
+    let mut ctx = ChartBuilder::on(&area)
+        .build_cartesian_2d(-100..100, -100..100)
+        .unwrap();
+
+    for step in steps {
+        println!("Rendering frame {}", step.step);
+        area.fill(&WHITE).unwrap();
+        ctx.configure_mesh().draw().unwrap();
+
+        for n in 0..3 {
+            let body = &step.bodies[n];
+            let color = match n {
+                0 => BLUE,
+                1 => RED,
+                2 => GREEN,
+                _ => BLACK,
+            };
+            ctx.draw_series([step].iter().map(|_| {
+                Circle::new(
+                    (
+                        (body.position.0 * 100.0).round() as i32,
+                        (body.position.1 * 100.0).round() as i32,
+                    ),
+                    2,
+                    color.filled(),
+                )
+            }))
+            .unwrap();
+        }
+        area.draw(&Text::new(
+            format!("T : {}", step.time.round() as u32),
+            (5, 5),
+            ("Inter", 12),
+        ))
+        .unwrap();
+        area.present().unwrap();
+    }
+}
+
 fn main() {
     let mut first = Body::new((0.3089693008, 0.4236727692));
     let mut second = Body::new((-0.5, 0.0));
     let mut third = Body::new((0.5, 0.0));
 
-    // let mut steps = Vec::<Step>::with_capacity(STEPS);
+    let mut steps = Vec::<Step>::with_capacity(STEPS);
 
-     for n in 0..STEPS {
+    for n in 0..STEPS {
         let mut new_step = Step {
-            time: (n as f64) * TIME_STEP, 
+            time: (n as f64) * TIME_STEP,
             step: n as u32,
             bodies: [first, second, third],
         };
@@ -52,7 +100,7 @@ fn main() {
 
                     let angle = dy.atan2(dx);
                     let fx = force * angle.cos();
-                    let fy = force * angle.sin();  
+                    let fy = force * angle.sin();
 
                     b.velocity.0 += fx / b.mass * TIME_STEP;
                     b.velocity.1 += fy / b.mass * TIME_STEP;
@@ -60,8 +108,8 @@ fn main() {
                     new_step.bodies[i] = b;
                 }
             }
-        } 
-        
+        }
+
         for body in new_step.bodies.iter_mut() {
             body.position.0 += body.velocity.0 * TIME_STEP;
             body.position.1 += body.velocity.1 * TIME_STEP;
@@ -76,7 +124,10 @@ fn main() {
             print!("({:.04}, {:.04})", first.position.0, first.position.1);
             print!(" ({:.04}, {:.04})", second.position.0, second.position.1);
             println!(" ({:.04}, {:.04})", third.position.0, third.position.1);
-         }
-     }
+        }
 
+        steps.push(new_step);
+    }
+
+    animate_steps(&steps);
 }
