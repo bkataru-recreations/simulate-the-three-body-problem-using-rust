@@ -21,16 +21,16 @@ struct Step {
     bodies: [Body; 3],
 }
 
-const TIME_STEP: f64 = 0.01;
+const TIME_STEP: f64 = 0.5;
 const STEPS: usize = 100_000;
 const G: f64 = 6.67430e-11; // gravitational constant
    
 fn main() {
-    let first = Body::new((0.3089693008, 0.4236727692));
-    let second = Body::new((-0.5, 0.0));
-    let third = Body::new((0.5, 0.0));
+    let mut first = Body::new((0.3089693008, 0.4236727692));
+    let mut second = Body::new((-0.5, 0.0));
+    let mut third = Body::new((0.5, 0.0));
 
-    let mut steps = Vec::<Step>::with_capacity(STEPS);
+    // let mut steps = Vec::<Step>::with_capacity(STEPS);
 
      for n in 0..STEPS {
         let mut new_step = Step {
@@ -60,20 +60,23 @@ fn main() {
                     new_step.bodies[i] = b;
                 }
             }
-        }
+        } 
         
         for body in new_step.bodies.iter_mut() {
             body.position.0 += body.velocity.0 * TIME_STEP;
             body.position.1 += body.velocity.1 * TIME_STEP;
         }
 
+        first = new_step.bodies[0];
+        second = new_step.bodies[1];
+        third = new_step.bodies[2];
+
+        // report current state
         if n % 1000 == 0 {
-            println!("({:.02}, {:.02})", first.position.0, first.position.1);
-            println!("({:.02}, {:.02})", second.position.0, second.position.1);
-            println!("({:.02}, {:.02})", third.position.0, third.position.1);
-        }
+            print!("({:.04}, {:.04})", first.position.0, first.position.1);
+            print!(" ({:.04}, {:.04})", second.position.0, second.position.1);
+            println!(" ({:.04}, {:.04})", third.position.0, third.position.1);
+         }
      }
 
-
-    println!("Hello, world!");
 }
